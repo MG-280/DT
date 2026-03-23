@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === THEME CSS VARIABLES === */
+
+:root[data-theme='dark'] {
+  --bg-page:              #0d0f14;
+  --bg-panel:             #13161e;
+  --bg-panel-hover:       #1a1f2e;
+  --bg-sunken:            #0f131a;
+  --bg-elevated:          #10141b;
+  --border-panel:         #1e2330;
+  --border-subtle:        #2a3a5a;
+  --text-primary:         #f5f7fb;
+  --text-secondary:       #94a3b8;
+  --text-tertiary:        #475569;
+  --text-muted:           #64748b;
+  --text-app-muted:       #8e99ab;
+  --text-app-soft:        #a9b3c4;
+  --header-bg:            #0d0f14;
+  --toggle-active-bg:     #1e3a5f;
+  --toggle-active-border: #3b82f6;
+  --toggle-inactive:      #1e2330;
+  --chart-grid:           #1e2330;
+  --chart-req:            #4fc3f7;
+  --chart-edi:            #ff9800;
+  --chart-inv:            #66bb6a;
+  --anomaly-critical:     #ef5350;
+  --anomaly-warning:      #ffa726;
+  --heatmap-high:         #2a1e0a;
+  --heatmap-mid:          #13161e;
+  --heatmap-low:          #1a2a3a;
+  --kpi-up:               #4ade80;
+  --kpi-down:             #ef5350;
+  --scrollbar-track:      #0f1218;
+  --scrollbar-thumb:      #262c3a;
+  --surface-tint:         rgba(255, 255, 255, 0.02);
+  --grid-line:            rgba(255, 255, 255, 0.02);
+  --shadow-panel:         inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 30px rgba(0,0,0,0.22);
+  --shadow-tooltip:       0 18px 30px rgba(0, 0, 0, 0.22);
+  --shadow-glow:          0 0 0 1px rgba(79,195,247,0.22), 0 0 26px rgba(79,195,247,0.12);
+  --overlay-backdrop:     rgba(0, 0, 0, 0.72);
+  --logo-gradient:        linear-gradient(135deg, #1b2330, #10151f);
+  --divider-strong:       rgba(255,255,255,0.24);
+  --divider-soft:         rgba(255,255,255,0.15);
+  --hover-outline-strong: rgba(79,195,247,0.24);
+  --hover-outline-soft:   rgba(79,195,247,0.16);
+}
+
+:root[data-theme='light'] {
+  --bg-page:              #ecf2f8;
+  --bg-panel:             #fdfefe;
+  --bg-panel-hover:       #e8f0fa;
+  --bg-sunken:            #e2ebf5;
+  --bg-elevated:          #f6faff;
+  --border-panel:         #d6e1ec;
+  --border-subtle:        #bdd0e3;
+  --text-primary:         #0f172a;
+  --text-secondary:       #475569;
+  --text-tertiary:        #71839a;
+  --text-muted:           #5f7288;
+  --text-app-muted:       #52657c;
+  --text-app-soft:        #6d7f95;
+  --header-bg:            #f8fbff;
+  --toggle-active-bg:     #dbeeff;
+  --toggle-active-border: #0284c7;
+  --toggle-inactive:      #edf4fb;
+  --chart-grid:           #cfddeb;
+  --chart-req:            #0b78b5;
+  --chart-edi:            #d86a12;
+  --chart-inv:            #2c8e53;
+  --anomaly-critical:     #dc2626;
+  --anomaly-warning:      #c96a11;
+  --heatmap-high:         #ffe7b8;
+  --heatmap-mid:          #fdfefe;
+  --heatmap-low:          #dceeff;
+  --kpi-up:               #1f8a4d;
+  --kpi-down:             #dc2626;
+  --scrollbar-track:      #e1eaf4;
+  --scrollbar-thumb:      #b8c9da;
+  --surface-tint:         rgba(255, 255, 255, 0.58);
+  --grid-line:            rgba(118, 141, 168, 0.12);
+  --shadow-panel:         inset 0 1px 0 rgba(255,255,255,0.92), 0 10px 24px rgba(41, 72, 110, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --shadow-tooltip:       0 16px 32px rgba(30, 41, 59, 0.12);
+  --shadow-glow:          0 0 0 1px rgba(11,120,181,0.18), 0 8px 20px rgba(11,120,181,0.14);
+  --overlay-backdrop:     rgba(118, 141, 168, 0.26);
+  --logo-gradient:        linear-gradient(135deg, #dbe7f4, #f8fbff);
+  --divider-strong:       rgba(118, 141, 168, 0.28);
+  --divider-soft:         rgba(118, 141, 168, 0.18);
+  --hover-outline-strong: rgba(11,120,181,0.24);
+  --hover-outline-soft:   rgba(11,120,181,0.16);
+}
+
+:root {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Default fallback (before JS sets data-theme — always dark) */
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top right, rgba(79, 195, 247, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(255, 152, 0, 0.06), transparent 18%),
+    linear-gradient(180deg, #0d0f14 0%, #0b0d12 100%);
+  color: #f5f7fb;
+}
+
+/* Dark theme body (explicit) */
+:root[data-theme='dark'] body {
+  background:
+    radial-gradient(circle at top right, rgba(79, 195, 247, 0.08), transparent 24%),
+    radial-gradient(circle at top left, rgba(255, 152, 0, 0.06), transparent 18%),
+    linear-gradient(180deg, #0d0f14 0%, #0b0d12 100%);
+  color: #f5f7fb;
+}
+
+/* Light theme body */
+:root[data-theme='light'] body {
+  background:
+    radial-gradient(circle at top right, rgba(11, 120, 181, 0.08), transparent 22%),
+    radial-gradient(circle at top left, rgba(216, 106, 18, 0.05), transparent 18%),
+    linear-gradient(180deg, #f8fbff 0%, var(--bg-page) 44%, #e7eef7 100%);
+  color: var(--text-primary);
+}
+
+/* === SMOOTH THEME TRANSITIONS === */
+*, *::before, *::after {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.15s ease;
+}
+
+/* No transitions on SVG elements — prevents Recharts rendering glitches */
+svg *, svg *::before, svg *::after {
+  transition: none !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+
+.panel-sheen {
+  background-image: linear-gradient(180deg, var(--surface-tint), transparent 18%);
+}
+
+.grid-glow {
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.recharts-default-tooltip {
+  border: 1px solid var(--border-panel) !important;
+  border-radius: 14px !important;
+  background: var(--bg-panel) !important;
+  box-shadow: var(--shadow-tooltip) !important;
+}
+
+@layer components {
+  .panel {
+    @apply panel-sheen border border-app-border bg-app-panel shadow-panel;
+  }
+
+  .panel-title {
+    @apply text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-app-soft;
+  }
+
+  .subtle-link {
+    @apply text-sm text-critical transition hover:text-red-300;
+  }
+
+  .toggle-chip {
+    @apply rounded-full border border-app-border bg-dt-elevated px-3 py-1.5 text-sm font-medium text-app-soft transition;
+  }
+
+  .toggle-chip-active {
+    @apply border-req text-app-text shadow-glow;
+  }
+}
