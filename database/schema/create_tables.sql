@@ -90,6 +90,51 @@ CREATE TABLE IF NOT EXISTS dt_dim_date (
 COMMENT ON TABLE dt_dim_date IS 'Dimension: Daily calendar grain; each date is linked to its parent ISO week.';
 
 -- -----------------------------------------------------------------------------
+-- POLICY / PARAMETER TABLES
+-- -----------------------------------------------------------------------------
+
+-- Part lead-time profile by supplier
+CREATE TABLE IF NOT EXISTS dt_part_lead_time (
+    lead_time_id         BIGINT       PRIMARY KEY,
+    part_id              VARCHAR(50)  NOT NULL REFERENCES dt_dim_part(part_id),
+    part_name            VARCHAR(255),
+    part_category        VARCHAR(100),
+    supplier_id          VARCHAR(50)  REFERENCES dt_dim_supplier(supplier_id),
+    supplier_name        VARCHAR(255),
+    supplier_tier        VARCHAR(50),
+    lead_time_mean_days  NUMERIC(18, 4),
+    lead_time_std_days   NUMERIC(18, 4),
+    effective_from       DATE,
+    effective_to         DATE
+);
+COMMENT ON TABLE dt_part_lead_time IS 'Parameter: Supplier lead-time profile for each part with effective-date bounds.';
+
+-- Part replenishment / inventory policy
+CREATE TABLE IF NOT EXISTS dt_part_policy (
+    policy_id      BIGINT       PRIMARY KEY,
+    part_id        VARCHAR(50)  NOT NULL REFERENCES dt_dim_part(part_id),
+    part_name      VARCHAR(255),
+    part_category  VARCHAR(100),
+    max_stock      NUMERIC(18, 4),
+    policy_mode    VARCHAR(50),
+    created_at     DATE
+);
+COMMENT ON TABLE dt_part_policy IS 'Parameter: Replenishment policy attributes per part (max stock and policy mode).';
+
+-- Weekly safety-stock and order-up-to snapshot by part
+CREATE TABLE IF NOT EXISTS dt_safety_stock_snapshot (
+    snapshot_id         BIGINT       PRIMARY KEY,
+    part_id             VARCHAR(50)  NOT NULL REFERENCES dt_dim_part(part_id),
+    part_name           VARCHAR(255),
+    part_category       VARCHAR(100),
+    week_id             VARCHAR(50)  NOT NULL REFERENCES dt_dim_week(week_id),
+    safety_stock_qty    NUMERIC(18, 4),
+    order_up_to_level   NUMERIC(18, 4),
+    computed_at         TIMESTAMP
+);
+COMMENT ON TABLE dt_safety_stock_snapshot IS 'Snapshot: Weekly computed safety stock and order-up-to level by part.';
+
+-- -----------------------------------------------------------------------------
 -- BRIDGE TABLES  (many-to-many relationships)
 -- -----------------------------------------------------------------------------
 
@@ -279,3 +324,17 @@ CREATE INDEX IF NOT EXISTS idx_finvd_is_forecast       ON dt_fact_inventory_dail
 CREATE INDEX IF NOT EXISTS idx_fanom_part_id           ON dt_fact_anomalies(part_id);
 CREATE INDEX IF NOT EXISTS idx_fanom_week_id           ON dt_fact_anomalies(week_id);
 CREATE INDEX IF NOT EXISTS idx_fanom_anomaly_flag      ON dt_fact_anomalies(anomaly_flag);
+
+-- dt_part_lead_time
+CREATE INDEX IF NOT EXISTS idx_plt_part_id             ON dt_part_lead_time(part_id);
+CREATE INDEX IF NOT EXISTS idx_plt_supplier_id         ON dt_part_lead_time(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_plt_effective_from      ON dt_part_lead_time(effective_from);
+
+-- dt_part_policy
+CREATE INDEX IF NOT EXISTS idx_pp_part_id              ON dt_part_policy(part_id);
+CREATE INDEX IF NOT EXISTS idx_pp_policy_mode          ON dt_part_policy(policy_mode);
+
+-- dt_safety_stock_snapshot
+CREATE INDEX IF NOT EXISTS idx_sss_part_id             ON dt_safety_stock_snapshot(part_id);
+CREATE INDEX IF NOT EXISTS idx_sss_week_id             ON dt_safety_stock_snapshot(week_id);
+CREATE INDEX IF NOT EXISTS idx_sss_computed_at         ON dt_safety_stock_snapshot(computed_at);

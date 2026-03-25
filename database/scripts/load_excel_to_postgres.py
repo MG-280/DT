@@ -60,6 +60,10 @@ FILE_TABLE_MAP: list[tuple[list[str], str]] = [
     (["dim_factory"],             "dt_dim_factory"),
     (["dim_week"],                "dt_dim_week"),
     (["dim_date", "dim_day"],     "dt_dim_date"),          # accepts either filename
+        # --- Parameter / policy snapshots (depend on dimensions) ---
+        (["dt_part_lead_time"],        "dt_part_lead_time"),
+        (["dt_part_policy"],           "dt_part_policy"),
+        (["dt_safety_stock_snapshot"], "dt_safety_stock_snapshot"),
 
     # --- Bridges (load second) ---
     (["bridge_part_assembly"],    "dt_bridge_part_assembly"),
