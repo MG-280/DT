@@ -238,3 +238,139 @@ npm run build
 ### Current cleanup status summary
 - Successful removals retained: 4
 - Reverted removals: 1 (`onVisibleWeeksChange` interface declaration)
+
+---
+
+## Phase 2 (2026-03-25)
+
+### Branch
+All Phase 2 changes are committed and pushed to `feature/version_2` (commit db912474).
+
+---
+
+### 2.1 Database: Three new dataset tables
+
+New Excel source files added to `database/raw/`:
+- `dt_part_lead_time.xlsx`
+- `dt_part_policy.xlsx`
+- `dt_safety_stock_snapshot.xlsx`
+
+Schema changes — `database/schema/create_tables.sql`:
+- Added table `dt_part_lead_time` with indexes.
+- Added table `dt_part_policy` with indexes.
+- Added table `dt_safety_stock_snapshot` (point-in-time snapshot) with indexes.
+
+Loader changes — `database/scripts/load_excel_to_postgres.py`:
+- Added file→table mappings for all three new `.xlsx` files.
+- Tables appended to the FK-safe ordered load list.
+- Row counts confirmed after reload.
+
+---
+
+### 2.2 Simulation Mode — additive feature implementation
+
+All simulation files are new additions; no existing dashboard behavior was removed or altered.
+
+Mode store — `frontend/src/store/dashboardModeStore.ts`:
+- Tracks `mode: 'analytics' | 'simulation'` and `selectedPartId`.
+- Exposes `enterSimulation`, `exitSimulation`, `selectPart` actions.
+- Exiting simulation clears the selected part.
+
+Scenario store — `frontend/src/store/simulationScenarioStore.ts`:
+- Full lifecycle state: add / remove / duplicate / rename / isolate / toggle visibility.
+- Subscribes to `dashboardModeStore` and clears all scenarios on mode exit.
+
+Type definitions — `frontend/src/types/simulationTypes.ts`:
+- Added: `PartStats`, `SimulationRequest`, `SimulationResponse`, `ScenarioState`.
+
+API client — `frontend/src/services/simulationApi.ts`:
+- `getPartStats(partId)` — fetches part baseline.
+- `runSupplyChainSimulation(request)` — posts scenario parameters.
+- `deleteSimulationResult(resultId)` — removes a saved result.
+- All calls enforce explicit request timeouts.
+
+Orchestration hook — `frontend/src/hooks/useSupplyChainSimulation.ts`:
+- Drives run/remove operations and aggregates loading state across scenarios.
+
+Mode hook — `frontend/src/hooks/useDashboardMode.ts`:
+- Thin composition hook; re-exports mode store selectors for component use.
+
+Simulation UI components — `frontend/src/components/simulation/`:
+- `SimulationModeButton.tsx` — toggle button to enter/exit simulation mode.
+- `PartParameterDrawer.tsx` — slide-in drawer for editing scenario parameters per selected part.
+- `SimulationScenarioPanel.tsx` — panel for managing active scenarios (add, list, isolate, visibility).
+- `SimulationChartOverlay.tsx` — utility for rendering scenario overlay series on the chart.
+
+Minimal wiring in existing files (additive only):
+- `frontend/src/pages/Dashboard.tsx` — added mode button placement, conditional scenario panel, drawer integration.
+- `frontend/src/components/chart/TimeSeriesChart.tsx` — overlay line rendering + reference line + visibility toggles.
+- `frontend/src/components/hierarchy/HierarchyPanel.tsx` — placeholder note for future simulation part-select path.
+
+---
+
+### 2.3 New frontend dependencies
+
+Added after explicit user approval:
+- `zustand@5.0.12` — mode and scenario stores.
+- `framer-motion@12.38.0` — drawer/panel animation in simulation components.
+
+Temporary vite alias and tsconfig path shims created during initial integration were removed after packages were installed. Build and strict typecheck pass cleanly.
+
+---
+
+### 2.4 Product Hierarchy UX changes
+
+File: `frontend/src/components/hierarchy/HierarchyPanel.tsx`
+
+Changes:
+- **Removed "Open Network" button** from the `rightAction` area of the Product Hierarchy panel.
+- **Removed `NetworkSelectionDialog` component** (SVG-based network visualisation modal) from the file entirely, along with all associated state (`isNetworkDialogOpen`, `stagedSelection`), helper functions (`buildHighlightedKeys`, `getSelectionLevel`, `getSelectionCount`), and type constants (`columnOrder`, `columnColor`, `columnX`, `GraphNode`).
+- **Removed `useHierarchyNetwork` data fetch hook call** since the network dialog was the only consumer.
+- **Click-to-expand cascading hierarchy**: Product rows and assembly rows are now expanded/collapsed by clicking the row label or the chevron icon (▸/▾), replacing the previous "Show" / "View parts" pill buttons. Products collapse to show only a header; click expands to show assemblies; click an assembly to show its parts. All expand states are independent per product/assembly.
+- `rightAction` now renders only a static "Tree" badge (active state chip).
+
+---
+
+### 2.5 Header — removed "Custom" time-range chip
+
+File: `frontend/src/utils/constants.ts`
+- Removed `{ label: 'Custom', value: 'custom' }` from `TIME_RANGE_OPTIONS`.
+
+File: `frontend/src/components/layout/Header.tsx`
+- Removed `isCustom` variable and all `Custom`-specific conditional classes (`cursor-not-allowed opacity-40 pointer-events-none`) from time-range button rendering.
+- Time-range selector now renders exactly three chips: 12 Weeks · 6 Months · 1 Year.
+
+---
+
+### 2.6 Repository hygiene — .gitignore
+
+File: `supply-chain-platform/.gitignore` (new)
+
+Protects the following from being committed:
+- `.env` and any `.env.*` variant (except `.env.example`)
+- Private key/certificate files (`*.pem`, `*.key`, `*.crt`, `*.p12`, `*.pfx`)
+- Python environments and bytecode (`.venv/`, `__pycache__/`, `*.pyc`)
+- Node artifacts (`node_modules/`, `frontend/node_modules/`)
+- Frontend build output (`frontend/dist/`)
+- Vite cache (`frontend/.vite/`, `frontend/node_modules/.vite/`)
+- OS and editor artefacts (`.DS_Store`, `Thumbs.db`, `.vscode/settings.json`)
+
+Previously tracked entries removed from git index:
+- `.env` — untracked via `git rm --cached`
+- `frontend/node_modules/` — untracked via `git rm -r --cached`
+- `frontend/dist/` — untracked via `git rm -r --cached`
+
+> **Security note**: credentials present in commits prior to this change still exist in git history. Rotate any secrets that were previously committed before making the repository public.
+
+---
+
+### 2.7 Phase 2 validation results
+
+| Check | Result |
+|---|---|
+| TypeScript strict (`npx tsc --noEmit`) | PASS |
+| Frontend production build (`npm run build`) | PASS |
+| Backend health `/api/health` | 200 – connected |
+| Frontend dev server asset endpoints | 200 |
+| Committed source files only (no `.env`, `node_modules`, `dist`) | CONFIRMED |
+| Branch pushed to remote | `feature/version_2` @ `db912474` |
