@@ -62,19 +62,16 @@ const Header = () => {
             <div className="inline-flex rounded-full border border-app-border bg-dt-elevated p-1">
             {TIME_RANGE_OPTIONS.map((option) => {
               const active = option.value === filters.time_range;
-              const isCustom = option.value === 'custom';
               return (
                 <button
                   key={option.value}
                   type="button"
-                  title={isCustom ? 'Custom date range - Phase 2' : undefined}
                   onClick={() => updateFilter('time_range', option.value)}
                   className={[
                     'rounded-full px-3 py-1.5 text-sm font-medium transition',
                     active
                       ? 'border border-req bg-dt-panel-hover text-app-text shadow-glow'
-                      : 'border border-transparent text-app-muted hover:text-app-text',
-                    isCustom ? 'cursor-not-allowed opacity-40 pointer-events-none' : ''
+                      : 'border border-transparent text-app-muted hover:text-app-text'
                   ].join(' ')}
                 >
                   {option.label}

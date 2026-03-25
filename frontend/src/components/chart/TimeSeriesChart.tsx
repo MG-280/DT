@@ -20,9 +20,12 @@ import type { Anomaly as AnomalyItem, ChartMode, MetricType, TimeSeriesPoint } f
 import { compactWeekLabel, formatNumber } from '../../utils/formatters';
 import { clamp } from '../../utils/helpers';
 import ImpactAnalysisModal from '../anomaly/ImpactAnalysisModal';
+import { useSimulationChartOverlay } from '../simulation/SimulationChartOverlay';
 import Panel from '../shared/Panel';
 import Toggle from '../shared/Toggle';
 import { useTheme } from '../../context/ThemeContext';
+import { useDashboardMode } from '../../hooks/useDashboardMode';
+import { useSimulationScenarioStore } from '../../store/simulationScenarioStore';
 
 interface TimeSeriesChartProps {
   isForecast: boolean;
@@ -226,6 +229,9 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
   const { filters } = useFilters();
   const { data = [] } = useTimeSeries(isForecast);
   const { theme } = useTheme();
+  const { mode } = useDashboardMode();
+  const scenarios = useSimulationScenarioStore((state) => state.scenarios);
+  const isolatedScenarioId = useSimulationScenarioStore((state) => state.isolatedScenarioId);
 
   // Theme-aware chart colors (needed for Recharts JSX props that don't support CSS vars)
   const chartReq = theme === 'dark' ? '#4fc3f7' : '#0284c7';
@@ -362,6 +368,13 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
   }, [data]);
 
   const chartData = chartMode === 'season' ? seasonalData : chartMode === 'trend' ? trendData : visibleData;
+  const simulationOverlay = useSimulationChartOverlay({
+    scenarios: mode === 'simulation' ? scenarios : [],
+    weekId: visibleData[0]?.week_id ?? '',
+    chartData: chartMode === 'season' ? visibleData : (chartData as TimeSeriesPoint[]),
+    isolatedScenarioId
+  });
+  const displayChartData = chartMode === 'season' ? chartData : simulationOverlay.mergedChartData;
 
   const handleMetricToggle = (metric: MetricType) => {
     setActiveMetrics((current) => ({ ...current, [metric]: !current[metric] }));
@@ -737,6 +750,31 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
               </button>
             ))}
           </div>
+          {mode === 'simulation' ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-app-border px-3 py-1 text-xs text-app-soft"
+                onClick={() => simulationOverlay.layerToggles.setShowActual(!simulationOverlay.layerToggles.showActual)}
+              >
+                Actual: {simulationOverlay.layerToggles.showActual ? 'On' : 'Off'}
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-app-border px-3 py-1 text-xs text-app-soft"
+                onClick={() => simulationOverlay.layerToggles.setShowSimulated(!simulationOverlay.layerToggles.showSimulated)}
+              >
+                Simulated: {simulationOverlay.layerToggles.showSimulated ? 'On' : 'Off'}
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-app-border px-3 py-1 text-xs text-app-soft"
+                onClick={() => simulationOverlay.layerToggles.setShowSafetyStock(!simulationOverlay.layerToggles.showSafetyStock)}
+              >
+                Safety Stock: {simulationOverlay.layerToggles.showSafetyStock ? 'On' : 'Off'}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -793,7 +831,7 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
           </div>
         ) : null}
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} onClick={handleChartClick}>
+          <ComposedChart data={displayChartData} onClick={handleChartClick}>
             <CartesianGrid stroke={chartGrid} strokeOpacity={0.4} vertical={false} />
             <XAxis
               dataKey={chartMode === 'season' ? 'week_label' : 'week_id'}
@@ -867,10 +905,20 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
                 strokeOpacity={0.6}
               />
             ))}
-            {chartMode === 'season' ? null : chartMode !== 'lines' ? (
+            {chartMode === 'season' || !simulationOverlay.layerToggles.showActual ? null : chartMode !== 'lines' ? (
               <Area type="monotone" dataKey="requirements" fill={`${chartReq}0a`} stroke="transparent" />
             ) : null}
-            {chartMode === 'trend' ? (
+            {chartMode === 'season' ? null : simulationOverlay.safetyStockLines.map((line) => (
+              <ReferenceLine
+                key={line.key}
+                y={line.y}
+                stroke={line.stroke}
+                strokeDasharray={line.strokeDasharray}
+                strokeOpacity={line.opacity}
+                label={{ value: line.label, fill: line.stroke, fontSize: 10 }}
+              />
+            ))}
+            {chartMode === 'trend' && simulationOverlay.layerToggles.showActual ? (
               <>
                 <Line
                   type="monotone"
@@ -894,7 +942,7 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
                   style={{ filter: 'drop-shadow(0 0 4px rgba(79,195,247,0.35))' }}
                 />
               </>
-            ) : chartMode === 'season' ? (
+            ) : chartMode === 'season' && simulationOverlay.layerToggles.showActual ? (
               <>
                 <Line
                   type="monotone"
@@ -917,7 +965,7 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
                   activeDot={{ r: 5, strokeWidth: 0 }}
                 />
               </>
-            ) : (
+            ) : simulationOverlay.layerToggles.showActual ? (
               (Object.keys(metricStyles) as MetricType[]).map((metric) =>
               activeMetrics[metric] ? (
                 <Line
@@ -932,6 +980,19 @@ const TimeSeriesChart = ({ isForecast, anomalies, onToggleForecast, onWeekSelect
                   strokeDasharray={isForecast ? '6 6' : undefined}
                 />
               ) : null
+            )) : null}
+            {chartMode === 'season' ? null : simulationOverlay.overlayLines.map((line) => (
+              <Line
+                key={line.key}
+                type="monotone"
+                dataKey={line.dataKey}
+                name={line.name}
+                stroke={line.stroke}
+                strokeDasharray={line.strokeDasharray}
+                strokeWidth={line.strokeWidth}
+                dot={line.dot}
+                isAnimationActive={false}
+              />
             ))}
           </ComposedChart>
         </ResponsiveContainer>

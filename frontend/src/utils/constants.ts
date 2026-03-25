@@ -53,8 +53,7 @@ export const FILTER_OPTIONS: Record<string, FilterOption[]> = {
 export const TIME_RANGE_OPTIONS = [
   { label: '12 Weeks', value: '12w' },
   { label: '6 Months', value: '6m' },
-  { label: '1 Year', value: '1y' },
-  { label: 'Custom', value: 'custom' }
+  { label: '1 Year', value: '1y' }
 ] as const;
 
 export const GRANULARITY_OPTIONS = [
